@@ -1,0 +1,49 @@
+name: ci
+
+run-name: ci (${{ inputs.scenario }})
+
+on:
+  workflow_dispatch:
+    inputs:
+      scenario:
+        description: Path to run
+        type: choice
+        required: true
+        default: green
+        options:
+          - green
+          - infra
+          - real_bug
+          - flaky
+
+jobs:
+  ci:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install dependencies
+        if: inputs.scenario == 'infra'
+        run: pip install --retries 0 --timeout 5 --index-url https://pypi.invalid/simple somepackage
+
+      - name: Install dependencies
+        if: inputs.scenario != 'infra'
+        run: python -m pip install pytest
+
+      - name: Run tests
+        if: inputs.scenario == 'green'
+        run: python -m pytest tests/test_calc.py::test_add
+
+      - name: Run tests
+        if: inputs.scenario == 'real_bug'
+        run: python -m pytest tests/test_calc.py::test_total
+
+      - name: Run tests
+        if: inputs.scenario == 'flaky'
+        run: python -m pytest tests/test_events.py
