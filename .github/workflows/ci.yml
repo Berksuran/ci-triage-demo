@@ -1,6 +1,5 @@
 name: ci
 
-run-name: ci (${{ inputs.scenario }})
 
 on:
   workflow_dispatch:
