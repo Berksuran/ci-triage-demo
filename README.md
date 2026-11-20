@@ -1,6 +1,8 @@
 # ci-triage-demo
 
-Small Python project and one GitHub Actions workflow used to produce four kinds of CI logs. Trigger `ci.yml` with `workflow_dispatch` and a `scenario` choice. The default is `green`. Each run executes only the steps for that choice.
+Small Python project and two GitHub Actions workflows. `ci.yml` is started by hand and produces four kinds of CI logs. `push-ci.yml` runs on every push and pull request.
+
+Trigger `ci.yml` with `workflow_dispatch` and a `scenario` choice. The default is `green`. Each run executes only the steps for that choice.
 
 Nothing in the job log names the choice. The run title does (`ci (green)`, and so on). Descriptions of what each path is for live in this file.
 
@@ -43,3 +45,33 @@ Re-run only the failed jobs of one run. For `flaky`, the new attempt sees `GITHU
 ```powershell
 gh run rerun <id> --failed
 ```
+
+## Push workflow
+
+`push-ci.yml` runs on every `push` and every `pull_request`, for any branch. It installs pytest and runs `tests/test_push_demo.py`. That test calls `word_count` in `demo/words.py`. As committed here, `word_count("one two three")` is `3`, so the check passes.
+
+Demo a failure, then a fix, from PowerShell:
+
+```powershell
+git checkout -b demo/word-count
+```
+
+In `demo/words.py`, change the return to `len(text.split()) - 1`.
+
+```powershell
+git add demo/words.py
+git commit -m "Return the wrong word count"
+git push -u origin HEAD
+```
+
+GitHub runs `push-ci` on that branch. pytest fails with `assert 2 == 3`. Wait for the Slack message about that run.
+
+Put the return back to `len(text.split())`, then:
+
+```powershell
+git add demo/words.py
+git commit -m "Return the word count"
+git push
+```
+
+The following run on that branch passes.
